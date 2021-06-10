@@ -50,6 +50,13 @@ h6 {
   margin: 0 0 5px;
 }
 
+button,
+input,
+select,
+textarea {
+  outline: none;
+}
+
 fieldset {
   padding: 0 10px 10px 10px;
   margin: 0;
@@ -84,6 +91,14 @@ fieldset {
   background-color: rgba($color: #000, $alpha: 0.4);
 }
 
+.screen-cover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
 .relative {
   position: relative;
 }
@@ -91,8 +106,24 @@ fieldset {
 .d-flex {
   display: flex;
 
-  &.v-center {
+  &.justify-content-center {
+    justify-content: center;
+  }
+
+  &.justify-content-space-between {
+    justify-content: space-between;
+  }
+
+  &.align-items-center {
     align-items: center;
+  }
+
+  &.align-items-start {
+    align-items: flex-start;
+  }
+
+  &.align-items-end {
+    align-items: flex-end;
   }
 
   &.nowrap {
@@ -115,6 +146,10 @@ fieldset {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.align-middle {
+  vertical-align: middle;
 }
 
 .popup {

@@ -1,6 +1,18 @@
 @import './colors';
 @import './utility';
 @import './hamburger';
+@import './spinner';
+
+hr {
+  &.dotted {
+    border: none;
+    border-top: 1px dotted $color-faint;
+
+    &.blue {
+      border-color: $color-blue-l2;
+    }
+  }
+}
 
 .w-100 {
   width: 100%;
@@ -48,6 +60,18 @@
   margin-bottom: 10px;
 }
 
+.mb-15px {
+  margin-bottom: 15px;
+}
+
+.mt-5px {
+  margin-top: 5px;
+}
+
+.mt-9px {
+  margin-top: 9px;
+}
+
 .py-10px {
   padding-top: 10px;
   padding-bottom: 10px;
@@ -79,6 +103,27 @@
   line-height: 14px;
 }
 
+.image-btn {
+  outline: none;
+  border: none;
+  background-color: transparent;
+  background-size: 100% 100%;
+  cursor: pointer;
+
+  &.sm {
+    width: 24px;
+    height: 24px;
+  }
+
+  &.delete {
+    background-image: url('../images/delete.png');
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
 .hamburger-bar {
   position: fixed;
   top: 0;
@@ -93,7 +138,7 @@
     transition: left 0.3s linear;
 
     &.open {
-      left: 320px;
+      left: 340px;
     }
   }
 }
@@ -108,7 +153,7 @@
   overflow: hidden;
 
   &.open {
-    max-width: 350px;
+    max-width: 380px;
   }
 
   .sidebar-inner {
@@ -141,7 +186,7 @@
 
     .item-wrap {
       background-color: $color-blue-l2;
-      padding: 4px;
+      padding: 4px 5px;
     }
 
     .tab-item {
@@ -181,6 +226,11 @@
   label {
     font-weight: bold;
     font-size: 0.7rem;
+
+    &.control-button {
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
   }
 
   &.d-flex {
@@ -221,7 +271,7 @@
   span {
     border: 2px solid gray;
     display: inline-block;
-    padding: 2px 5px;
+    padding: 2px;
     background-color: #323335;
     color: $color-light;
     font-weight: bold;
@@ -264,5 +314,73 @@
       padding: 0 2px;
       line-height: 0.7rem;
     }
+  }
+}
+
+.control-value {
+  border: 2px solid gray;
+  display: inline-block;
+  padding: 2px 5px;
+  background-color: #323335;
+  color: $color-light;
+  font-weight: bold;
+  font-size: 0.9rem;
+  vertical-align: middle;
+  text-align: center;
+
+  &.lg {
+    min-width: 40px;
+  }
+}
+
+.thumbnails-container {
+  flex-flow: row wrap;
+  max-width: 100%;
+  overflow-y: auto;
+}
+
+.thumbnail {
+  border: 2px solid #1d1c1c;
+  min-width: 100px;
+  min-height: 100px;
+  max-width: 100px;
+  max-height: 100px;
+  background-color: $color-blue-l1;
+
+  &.selected {
+    border-color: $color-success;
+  }
+}
+
+.busy-cover {
+  display: none;
+
+  &.open {
+    display: block;
+  }
+}
+
+.feedback-body {
+  padding: 15px 30px;
+  background-color: $color-light;
+  color: $color-blue-l2;
+  border: 2px solid $color-light;
+  border-radius: 5px;
+
+  &.error {
+    border-color: $color-alert;
+
+    .heading {
+      color: $color-alert;
+      margin-bottom: 10px;
+    }
+
+    .feedback {
+      margin-top: 10px;
+    }
+  }
+
+  .heading {
+    font-size: 1.1rem;
   }
 }

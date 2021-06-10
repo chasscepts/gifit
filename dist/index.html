@@ -5,6 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gif !t</title>
+  <link id="site-icon" rel="icon" type="image/png">
 </head>
 <body>
   <div id="content" class="content bg-primary">
@@ -13,10 +14,11 @@
     </div>
     <aside id="sidebar" class="sidebar open">
       <div class="sidebar-inner">
-        <div id="display-wrap">
+        <div id="display-wrap" class="mb-15px">
           <div class="tab-headers display-tab-header">
             <button class="tab-header active" data-tab="#video-wrap">Video Player</button>
             <button class="tab-header" data-tab="#simulation-wrap">Simulation</button>
+            <button class="tab-header" data-tab="#frame-view-wrap">Frame View</button>
           </div>
           <div class="tab-items">
             <div id="simulation-wrap" class="tab-item">
@@ -49,7 +51,7 @@
                     </div>
                     <span id="simulation-interval-value" class="slider-value-span small">100</span>
                   </div>
-                  <div class="control-group slider-group d-flex v-center nowrap">
+                  <div class="control-group slider-group d-flex align-items-center nowrap">
                     <span>Reverse</span>
                     <div class="check-con fixed-height mx-3px">
                       <input type="checkbox" id="simulation-reverse-check" checked>
@@ -62,20 +64,23 @@
               </div>
             </div>
             <div id="video-wrap" class="tab-item selected">
-              <div id="vid-con" class="vid-con item-wrap"><video id="player" class="player" muted></video></div>
+              <div id="vid-con" class="vid-con item-wrap"><video id="player" class="player" muted controls></video></div>
               <div class="controls relative">
-                <input type="file" id="load-video-file" class="clip">
-                <button id="load-video-btn" class="control-button">Load</button>
+                <label id="load-video-btn" class="control-button relative">
+                  Load
+                  <input type="file" id="load-video-file" class="clip">
+                </label>
                 <button id="frame-start-btn" class="control-button"
                   title="Mark Position As GIF Start Frame">Mark Start Position</button>
+                <span id="frame-start-text" class="control-value lg">0.00</span>
               </div>
               <div class="controls d-flex">
                 <div class="control-group slider-group flex-1">
                   <span>Duration</span>
                   <div class="slider-con">
-                    <input type="range" min="0" max="50" value="0" class="slider" id="duration-slider">
+                    <input type="range" min="0" max="50" value="10" class="slider" id="duration-slider">
                   </div>
-                  <span id="duration-value" class="slider-value-span">1</span>
+                  <span id="duration-text" class="slider-value-span">1.0</span>
                 </div>
               </div>
               <div class="control-group slider-group flex-1 right">
@@ -90,9 +95,93 @@
                 <button id="grab-btn" class="control-button">Grab Frames</button>
               </div>
             </div>
+            <div id="frame-view-wrap" class="tab-item">
+              <div class="item-wrap">
+                <canvas id="frame-view-canvas" class="simulation-canvas" width="320" height="200"></canvas>
+              </div>
+              <fieldset id="board-ct-controls" class="mt-5px relative">
+                <legend>Local Color Table</legend>
+                <div class="ct-controls-wrap">
+                  <div class="d-flex justify-content-space-between align-items-end">
+                    <label class="d-flex align-items-center nowrap mt-9px">
+                      <span>Use GCT</span>
+                      <input type="checkbox" id="use-gct-check" class="align-middle mx-3px" checked>
+                    </label>
+                    <button id="delete-frame-btn" class="image-btn sm delete"></button>
+                  </div>
+                  <div class="controls">
+                    <div class="radio-group">
+                      <label class="control-group">
+                        <div class="radio-con">
+                          <input type="radio" id="local-histogram" name="local-algorithm"
+                            class="radio algorithm-radio" value="Histogram">
+                        </div>
+                        <span>Histogram</span>
+                      </label>
+                      <label class="control-group" title="Median Cut">
+                        <div class="radio-con">
+                          <input type="radio" id="local-median-cut" name="local-algorithm"
+                              class="radio algorithm-radio" value="Median Cut" checked>
+                        </div>
+                        <span>Median</span>
+                      </label>
+                      <label class="control-group" title="Modified Histogram">
+                        <div class="radio-con">
+                          <input type="radio" id="local-modified-histogram"
+                            name="local-algorithm" class="radio algorithm-radio"
+                            value="Modified Histogram">
+                        </div>
+                        <span>Mod Hist</span>
+                      </label>
+                      <label class="control-group" title="Not Yet Implemented">
+                        <div class="radio-circle"></div>
+                        <input type="radio" id="local-k-cut" name="local-algorithm"
+                          class="radio algorithm-radio" value="K Means" disabled>
+                        <span>K Means</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="controls d-flex">
+                    <div class="control-group d-flex align-items-center nowrap">
+                      <span>Order</span>
+                      <select id="lct-order-select" class="fixed-height mx-3px">
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                        <option>5</option>
+                        <option>6</option>
+                        <option>7</option>
+                        <option selected>8</option>
+                      </select>
+                    </div>
+                    <div class="control-group d-flex align-items-center nowrap">
+                      <span title="Size Of Color Table">Table Length</span>
+                      <select id="lct-length-select" class="fixed-height mx-3px">
+                        <option>2</option>
+                        <option>4</option>
+                        <option>8</option>
+                        <option>16</option>
+                        <option>32</option>
+                        <option>64</option>
+                        <option>128</option>
+                        <option selected>256</option>
+                      </select>
+                    </div>
+                    <label class="control-group d-flex align-items-center nowrap">
+                      <span>Dither</span>
+                      <div class="check-con mx-3px">
+                        <input type="checkbox" id="local-dither-check" class="align-middle" checked>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div id="local-board-ct-controls-hide" class="cover popup"> </div>
+              </fieldset>
+            </div>
           </div>
         </div>
-        <div id="board-controls relative">
+        <hr class="dotted blue"/>
+        <div id="board-controls" class="relative">
           <fieldset id="board-ct-controls" class="board-ct-controls">
             <legend>Global Color Table</legend>
             <div id="ct-controls-wrap">
@@ -101,21 +190,21 @@
                   <label class="control-group">
                     <div class="radio-con">
                       <input type="radio" id="histogram" name="algorithm"
-                        class="radio algorithm-radio" value="Histogram">
+                        class="radio algorithm-radio gct-algo-radio" value="Histogram">
                     </div>
                     <span>Histogram</span>
                   </label>
                   <label class="control-group" title="Median Cut">
                     <div class="radio-con">
                       <input type="radio" id="median-cut" name="algorithm"
-                          class="radio algorithm-radio" value="Median Cut" checked>
+                          class="radio algorithm-radio gct-algo-radio" value="Median Cut" checked>
                     </div>
                     <span>Median</span>
                   </label>
                   <label class="control-group" title="Modified Histogram">
                     <div class="radio-con">
                       <input type="radio" id="modified-histogram"
-                        name="algorithm" class="radio algorithm-radio"
+                        name="algorithm" class="radio algorithm-radio gct-algo-radio"
                         value="Modified Histogram">
                     </div>
                     <span>Mod Hist</span>
@@ -123,13 +212,13 @@
                   <label class="control-group" title="Not Yet Implemented">
                     <div class="radio-circle"></div>
                     <input type="radio" id="k-cut" name="algorithm"
-                      class="radio algorithm-radio" value="K Means" disabled>
+                      class="radio algorithm-radio gct-algo-radio" value="K Means" disabled>
                     <span>K Means</span>
                   </label>
                 </div>
               </div>
               <div class="controls d-flex">
-                <div class="control-group d-flex v-center nowrap">
+                <div class="control-group d-flex align-items-center nowrap">
                   <span>Order</span>
                   <select id="gct-order-select" class="fixed-height mx-3px">
                     <option>2</option>
@@ -141,7 +230,7 @@
                     <option selected>8</option>
                   </select>
                 </div>
-                <div class="control-group d-flex v-center nowrap">
+                <div class="control-group d-flex align-items-center nowrap">
                   <span title="Size Of Color Table">Table Length</span>
                   <select id="gct-length-select" class="fixed-height mx-3px">
                     <option>2</option>
@@ -154,12 +243,12 @@
                     <option selected>256</option>
                   </select>
                 </div>
-                <div class="control-group d-flex v-center nowrap">
+                <label class="control-group d-flex align-items-center nowrap">
                   <span>Dither</span>
                   <div class="check-con mx-3px">
-                    <input type="checkbox" id="dither-check" checked>
+                    <input type="checkbox" id="gct-dither-check" class="align-middle" checked>
                   </div>
-                </div>
+                </label>
               </div>
             </div>
             <div id="board-ct-controls-hide">
@@ -172,18 +261,24 @@
         </div>
       </div>
     </aside>
-    <div class="d-flex flex-column flex-1 bg-primary">
-      <header class="text-center text-light">
+    <div id="main-wrap" class="d-flex flex-column flex-1 bg-primary">
+      <header id="page-header" class="text-center text-light">
         <h1 class="mb-0 py-10px">GIT !T</h1>
       </header>
-      <main class="flex-1 thumbnails-wrap bg-dark mx-10px mb-10px p-10px">
-        <div id="thumbnails-container" class="bg-black h-100"></div>
+      <main id="page-main" class="flex-1 thumbnails-wrap bg-dark mx-10px mb-10px p-10px">
+        <div id="thumbnails-container" class="d-flex bg-black h-100 justify-content-center align-items-start thumbnails-container relative"></div>
       </main>
-      <footer class="text-center text-light page-footer">
+      <footer id="page-footer" class="text-center text-light page-footer">
         <div>The Graphics Interchange Format(c) is the Copyright property of CompuServe Incorporated.</div>
         <div>GIF(sm) is a Service Mark property of CompuServe Incorporated.</div>
         <div>2021 @ Chasscepts</div>
       </footer>
+    </div>
+  </div>
+  <div id="busy-screen" class="screen-cover busy-cover">
+    <div class="dim"></div>
+    <div class="cover center-child">
+      <div class="spinner"></div>
     </div>
   </div>
   <script src="main.js"></script>
