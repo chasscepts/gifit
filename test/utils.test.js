@@ -97,4 +97,15 @@ describe('Utils', () => {
       expect(Utils.byteLength(256)).toStrictEqual([1, 1, 1]);
     });
   });
+
+  describe('logicalScreenDescriptor', () => {
+    it('correctly evaluates a sample image', () => {
+      const options = {
+        width: 10, height: 10, resolution: 2, sorted: false, ctLength: 4,
+      };
+      expect(
+        Utils.logicalScreenDescriptor(options),
+      ).toStrictEqual([0x0A, 0x00, 0x0A, 0x00, 0x91, 0x00, 0x00]);
+    });
+  });
 });
