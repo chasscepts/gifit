@@ -74,6 +74,16 @@ describe('Utils', () => {
     });
   });
 
+  describe('toBinary', () => {
+    it('correctly converts 0', () => {
+      expect(Utils.toBinary(0, 4)).toStrictEqual([0, 0, 0, 0]);
+    });
+
+    it('correctly converts 7', () => {
+      expect(Utils.toBinary(7, 3)).toStrictEqual([1, 1, 1]);
+    });
+  });
+
   describe('byteLength', () => {
     it('throws error when length is not power of 2', () => {
       expect(() => Utils.byteLength(7)).toThrow();
