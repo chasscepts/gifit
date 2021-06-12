@@ -53,8 +53,31 @@ const fromBits = (bits) => {
   return accm;
 };
 
+const byteLength = (ctLength) => {
+  const getLength = (n) => 2 ** (n + 1);
+  let N = 1;
+  let length = getLength(N);
+  while (length < ctLength) {
+    N += 1;
+    length = getLength(N);
+    if (length > ctLength) {
+      throw new Error('color table length MUST be a power of 2.');
+    }
+  }
+
+  const rslt = [0, 0, 0];
+  const { bits } = toBits(N);
+  for (let i = 0; i < rslt.length; i += 1) {
+    if (bits[i + 5]) {
+      rslt[i] = 1;
+    }
+  }
+  return rslt;
+};
+
 export default {
   lsb,
   toBits,
   fromBits,
+  byteLength,
 };
