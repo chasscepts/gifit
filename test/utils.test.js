@@ -1,4 +1,4 @@
-import { expect, it } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import Utils from '../src/lib/utils';
 
 describe('Utils', () => {
@@ -13,6 +13,50 @@ describe('Utils', () => {
 
     it('correctly converts 256', () => {
       expect(Utils.lsb(256)).toStrictEqual([0, 1]);
+    });
+  });
+
+  describe('bits', () => {
+    it('throws Error when number is less than 0', () => {
+      expect(() => Utils.toBits(-1)).toThrow();
+    });
+
+    it('throws Error when number is greater than 255', () => {
+      expect(() => Utils.toBits(256)).toThrow();
+    });
+
+    it('correctly converts 0', () => {
+      const { bits } = Utils.toBits(0);
+      expect(
+        bits[0] || bits[1] || bits[2] || bits[3] || bits[4] || bits[5] || bits[6] || bits[7],
+      ).toBe(false);
+    });
+
+    it('correctly converts 255', () => {
+      const { bits } = Utils.toBits(255);
+      expect(
+        bits[0] && bits[1] && bits[2] && bits[3] && bits[4] && bits[5] && bits[6] && bits[7],
+      ).toBe(true);
+    });
+
+    it('correctly converts 170', () => {
+      const { bits } = Utils.toBits(170);
+      expect(bits[0] && bits[2] && bits[4] && bits[6]).toBe(true);
+      expect(bits[1] || bits[3] || bits[5] || bits[7]).toBe(false);
+    });
+
+    it('isset and bits both return the same thing', () => {
+      const { bits, isset } = Utils.toBits(170);
+      expect(
+        bits[0] === isset(0)
+        && bits[1] === isset(1)
+        && bits[2] === isset(2)
+        && bits[3] === isset(3)
+        && bits[4] === isset(4)
+        && bits[5] === isset(5)
+        && bits[6] === isset(6)
+        && bits[7] === isset(7),
+      ).toBe(true);
     });
   });
 });
