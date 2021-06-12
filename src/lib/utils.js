@@ -37,7 +37,18 @@ const toBits = (number) => {
   };
 };
 
+const fromBits = (bits) => {
+  let accm = 0;
+  for (let i = 0; i < 8; i += 1) {
+    if (bits[i]) {
+      accm += 2 ** (7 - i);
+    }
+  }
+  return accm;
+};
+
 export default {
   lsb,
   toBits,
+  fromBits,
 };
