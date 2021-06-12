@@ -73,4 +73,18 @@ describe('Utils', () => {
       expect(Utils.fromBits([1, 0, 1, 0, 1, 0, 1, 0])).toBe(170);
     });
   });
+
+  describe('byteLength', () => {
+    it('throws error when length is not power of 2', () => {
+      expect(() => Utils.byteLength(7)).toThrow();
+    });
+
+    it('correctly converts 4', () => {
+      expect(Utils.byteLength(4)).toStrictEqual([0, 0, 1]);
+    });
+
+    it('correctly converts 256', () => {
+      expect(Utils.byteLength(256)).toStrictEqual([1, 1, 1]);
+    });
+  });
 });
