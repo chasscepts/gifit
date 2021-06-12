@@ -37,6 +37,12 @@ const toBits = (number) => {
   };
 };
 
+/**
+ * Treats an array of length 8 as a binary representation of a number
+ * and converts it to it's decimal equivalent.
+ * @param {Array} bits an array of length 8
+ * @returns {Number} a decimal number
+ */
 const fromBits = (bits) => {
   let accm = 0;
   for (let i = 0; i < 8; i += 1) {
