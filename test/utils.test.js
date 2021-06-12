@@ -16,7 +16,7 @@ describe('Utils', () => {
     });
   });
 
-  describe('bits', () => {
+  describe('toBits', () => {
     it('throws Error when number is less than 0', () => {
       expect(() => Utils.toBits(-1)).toThrow();
     });
@@ -57,6 +57,20 @@ describe('Utils', () => {
         && bits[6] === isset(6)
         && bits[7] === isset(7),
       ).toBe(true);
+    });
+  });
+
+  describe('fromBits', () => {
+    it('correctly converts 0', () => {
+      expect(Utils.fromBits([0, 0, 0, 0, 0, 0, 0, 0])).toBe(0);
+    });
+
+    it('correctly converts 255', () => {
+      expect(Utils.fromBits([1, 1, 1, 1, 1, 1, 1, 1])).toBe(255);
+    });
+
+    it('correctly converts 170', () => {
+      expect(Utils.fromBits([1, 0, 1, 0, 1, 0, 1, 0])).toBe(170);
     });
   });
 });
