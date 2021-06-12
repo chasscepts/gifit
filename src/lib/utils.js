@@ -6,13 +6,15 @@ const lsb = (number) => [number & 0xFF, number >> 8];
  * Converts a number to an array of length 8.
  * Each item in the array is set to true if corresponding bit
  * in binary representation of number is 1 and false otherwise.
+ * CAUTION: This function truncates a number if it is greater than 255 (largest ubyte) !!!
  * @param {Number} number to convert
  * @returns an array of length 8
  */
 const toBits = (number) => {
   if (number < 0 || number > 255) {
-    throw new Error('Numner must be in the range (1, 255) inclusive');
+    throw new Error('Numner must be in the range (0, 255) inclusive');
   }
+
   const bits = [
     !!(number & 128),
     !!(number & 64),
@@ -53,6 +55,21 @@ const fromBits = (bits) => {
   return accm;
 };
 
+const toBinary = (byte, numberOfBits) => {
+  const rslt = [];
+  for (let i = 0; i < numberOfBits; i += 1) {
+    rslt.push(0);
+  }
+  const diff = 8 - numberOfBits;
+  const { bits } = toBits(byte);
+  for (let i = 0; i < numberOfBits; i += 1) {
+    if (bits[i + diff]) {
+      rslt[i] = 1;
+    }
+  }
+  return rslt;
+};
+
 const byteLength = (ctLength) => {
   const getLength = (n) => 2 ** (n + 1);
   let N = 1;
@@ -65,19 +82,13 @@ const byteLength = (ctLength) => {
     }
   }
 
-  const rslt = [0, 0, 0];
-  const { bits } = toBits(N);
-  for (let i = 0; i < rslt.length; i += 1) {
-    if (bits[i + 5]) {
-      rslt[i] = 1;
-    }
-  }
-  return rslt;
+  return toBinary(N, 3);
 };
 
 export default {
   lsb,
   toBits,
   fromBits,
+  toBinary,
   byteLength,
 };
