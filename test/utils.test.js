@@ -136,10 +136,10 @@ describe('Utils', () => {
     });
   });
 
-  describe('loopingBlock', () => {
+  describe('loopBlock', () => {
     it('correctly evaluates a sample image', () => {
       expect(
-        Utils.loopingBlock({ loopTimes: 0 }),
+        Utils.loopBlock({ loopTimes: 0 }),
       ).toStrictEqual([
         0x21, 0xFF, 0x0B, 0x4E, 0x45, 0x54, 0x53, 0x43, 0x41,
         0x50, 0x45, 0x32, 0x2E, 0x30, 0x03, 0x01, 0x00, 0x00, 0x00,
@@ -168,6 +168,43 @@ describe('Utils', () => {
       ).toStrictEqual([
         0x2C, 0x02, 0x00, 0x0B, 0x00, 0x07, 0x00, 0x10, 0x00, 0x00,
       ]);
+    });
+  });
+
+  describe('normalizeColorTable', () => {
+    const randomByte = () => Math.floor(256 * Math.random());
+    it('returns appropriate values when table length is a perfect square of 2', () => {
+      const n = 4;
+      const length = 3 * 2 ** (n + 1);
+      const ct = [...Array(length)].map(() => randomByte());
+      const normalized = Utils.normalizeColorTable(ct);
+      expect(normalized.ct).toStrictEqual(ct);
+      expect(normalized.N).toStrictEqual(n);
+    });
+
+    it('fill up color table when length is not a perfect square of 2', () => {
+      const n = 4;
+      const nextN = 5;
+      const extraLength = 10;
+      const length = 3 * 2 ** (n + 1) + extraLength;
+      const ct = [...Array(length)].map(() => randomByte());
+      const ctl = [...ct];
+      [...Array(3 * 2 ** (nextN + 1) - length)].forEach(() => ctl.push(0));
+      const normalized = Utils.normalizeColorTable(ct);
+      expect(normalized.ct).toStrictEqual(ctl);
+      expect(normalized.N).toStrictEqual(nextN);
+    });
+
+    it('truncates color table when length is greater than 256', () => {
+      const n = 7;
+      const extraLength = 30;
+      const length = 3 * 2 ** (n + 1);
+      const ctl = [...Array(length)].map(() => randomByte());
+      const ct = [...ctl];
+      [...Array(length + extraLength)].forEach(() => ct.push(0));
+      const normalized = Utils.normalizeColorTable(ct);
+      expect(normalized.ct).toStrictEqual(ctl);
+      expect(normalized.N).toStrictEqual(n);
     });
   });
 });
