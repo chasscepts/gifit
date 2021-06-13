@@ -146,4 +146,28 @@ describe('Utils', () => {
       ]);
     });
   });
+
+  describe('imageDescriptor', () => {
+    it('correctly evaluates a sample image with (left, top) = (0, 0)', () => {
+      const options = {
+        left: 0, top: 0, width: 10, height: 10, interlace: false, sorted: false, lctLength: 0,
+      };
+      expect(
+        Utils.imageDescriptor(options),
+      ).toStrictEqual([
+        0x2C, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x00,
+      ]);
+    });
+
+    it('correctly evaluates a sample image with (left, top) = (0, 0)', () => {
+      const options = {
+        left: 2, top: 11, width: 7, height: 16, interlace: false, sorted: false, lctLength: 0,
+      };
+      expect(
+        Utils.imageDescriptor(options),
+      ).toStrictEqual([
+        0x2C, 0x02, 0x00, 0x0B, 0x00, 0x07, 0x00, 0x10, 0x00, 0x00,
+      ]);
+    });
+  });
 });
