@@ -135,4 +135,15 @@ describe('Utils', () => {
       ]);
     });
   });
+
+  describe('loopingBlock', () => {
+    it('correctly evaluates a sample image', () => {
+      expect(
+        Utils.loopingBlock({ loopTimes: 0 }),
+      ).toStrictEqual([
+        0x21, 0xFF, 0x0B, 0x4E, 0x45, 0x54, 0x53, 0x43, 0x41,
+        0x50, 0x45, 0x32, 0x2E, 0x30, 0x03, 0x01, 0x00, 0x00, 0x00,
+      ]);
+    });
+  });
 });
