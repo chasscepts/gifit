@@ -4,6 +4,8 @@ const EXTENSION_INTRODUCER = 0x21;
 
 const GRAPHIC_CONTROL_LABEL = 0xF9;
 
+const APPLICATION_EXTENSION_LABEL = 0xFF;
+
 const BLOCK_TERMINATOR = 0;
 
 const DISPOSAL_METHODS = {
@@ -154,6 +156,24 @@ const logicalScreenDescriptor = (options = {
   return rslt;
 };
 
+// Netscape Looping Block: Application Extension Block
+const loopingBlock = (options = { loopTimes: 0 }) => {
+  const blockLength = 11;
+  const subBlockLength = 3;
+  const subBlockLabel = 1;
+  const loopTimes = lsb(options.loopTimes);
+  return [
+    EXTENSION_INTRODUCER,
+    APPLICATION_EXTENSION_LABEL,
+    blockLength,
+    0x4E, 0x45, 0x54, 0x53, 0x43, 0x41, 0x50, 0x45, 0x32, 0x2E, 0x30, //  NETSCAPE2.0
+    subBlockLength,
+    subBlockLabel,
+    loopTimes[0], loopTimes[1],
+    BLOCK_TERMINATOR,
+  ];
+};
+
 // Graphics Control Extension
 const gce = (options = {
   delay: 0,
@@ -208,5 +228,6 @@ export default {
   byteLength,
   uint8ToBase64String,
   logicalScreenDescriptor,
+  loopingBlock,
   gce,
 };
