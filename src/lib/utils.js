@@ -8,6 +8,10 @@ const APPLICATION_EXTENSION_LABEL = 0xFF;
 
 const BLOCK_TERMINATOR = 0;
 
+const TRAILER = 0x3B;
+
+const MAX_TABLE_LENGTH = 768; //  3 * 256
+
 const DISPOSAL_METHODS = {
   NOT_SPECIFIED: 0,
   DO_NOT_DISPOSE: 1,
@@ -127,9 +131,17 @@ const uint8ToBase64String = (data) => {
   return btoa(c.join(''));
 };
 
-const logicalScreenDescriptor = (options = {
-  width: 0, height: 0, resolution: 0, sorted: false, ctLength: 0,
-}) => {
+const logicalScreenDescriptor = (
+  options = {
+    width: 0,
+    height: 0,
+    resolution: 0,
+    sorted: false,
+    ctLength: 0,
+    bgIndex: 0,
+    aspectRatio: 0,
+  },
+) => {
   const rslt = [...lsb(options.width), ...lsb(options.height)];
   const ctBits = [0, 0, 0, 0, 0, 0, 0, 0];
   if (options.ctLength) {
@@ -151,13 +163,13 @@ const logicalScreenDescriptor = (options = {
       pos += 1;
     }
   }
-  rslt.push(fromBits(ctBits), 0, 0);
+  rslt.push(fromBits(ctBits), options.bgIndex || 0, options.aspectRatio || 0);
 
   return rslt;
 };
 
 // Netscape Looping Block: Application Extension Block
-const loopingBlock = (options = { loopTimes: 0 }) => {
+const loopBlock = (options = { loopTimes: 0 }) => {
   const blockLength = 11;
   const subBlockLength = 3;
   const subBlockLabel = 1;
@@ -252,9 +264,49 @@ const imageDescriptor = (options = {
   ];
 };
 
+/**
+ *
+ * @param {Array<Number>} ct color table
+ * @returns {{ct: Array<Number>, length: number, N: number}}
+ */
+const normalizeColorTable = (ct) => {
+  let { length } = ct;
+  let n = 0;
+  if (length > MAX_TABLE_LENGTH) {
+    ct.splice(MAX_TABLE_LENGTH);
+    n = 8;
+    length = MAX_TABLE_LENGTH;
+  } else {
+    let temp = 0;
+    while (temp < length) {
+      temp = 3 * 2 ** n;
+      if (temp === length) {
+        break;
+      }
+      if (temp > length) {
+        while (temp > length) {
+          ct.push(0);
+          length += 1;
+        }
+        break;
+      }
+      n += 1;
+    }
+  }
+
+  length /= 3;
+
+  return {
+    ct,
+    length,
+    N: n - 1,
+  };
+};
+
 export default {
   HEADER,
   DISPOSAL_METHODS,
+  TRAILER,
   lsb,
   toBits,
   fromBits,
@@ -262,7 +314,8 @@ export default {
   byteLength,
   uint8ToBase64String,
   logicalScreenDescriptor,
-  loopingBlock,
+  loopBlock,
   gce,
   imageDescriptor,
+  normalizeColorTable,
 };
