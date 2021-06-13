@@ -108,4 +108,31 @@ describe('Utils', () => {
       ).toStrictEqual([0x0A, 0x00, 0x0A, 0x00, 0x91, 0x00, 0x00]);
     });
   });
+
+  describe('gce', () => {
+    it('return correct value for sample NON animated image', () => {
+      const options = {
+        delay: 0,
+        transparentColorIndex: 0,
+        transparentColorFlag: false,
+        disposalMethod: Utils.DISPOSAL_METHODS.NOT_SPECIFIED,
+        userInput: false,
+      };
+      expect(Utils.gce(options)).toStrictEqual([
+        0x21, 0xF9, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+      ]);
+    });
+
+    it('return correct value for sample animated image', () => {
+      const options = {
+        delay: 100,
+        transparentColorFlag: false,
+        disposalMethod: Utils.DISPOSAL_METHODS.DO_NOT_DISPOSE,
+        userInput: false,
+      };
+      expect(Utils.gce(options)).toStrictEqual([
+        0x21, 0xF9, 0x04, 0x04, 0x64, 0x00, 0x00, 0x00,
+      ]);
+    });
+  });
 });
