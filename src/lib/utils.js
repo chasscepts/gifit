@@ -6,6 +6,13 @@ const GRAPHIC_CONTROL_LABEL = 0xF9;
 
 const BLOCK_TERMINATOR = 0;
 
+const DISPOSAL_METHODS = {
+  NOT_SPECIFIED: 0,
+  DO_NOT_DISPOSE: 1,
+  RESTORE_TO_BACKGROUND: 2,
+  RESTORE_TO_PREVIOUS: 3,
+};
+
 const HEADER = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]; // GIF89a
 
 const lsb = (number) => [number & 0xFF, number >> 8];
@@ -147,8 +154,53 @@ const logicalScreenDescriptor = (options = {
   return rslt;
 };
 
+// Graphics Control Extension
+const gce = (options = {
+  delay: 0,
+  transparentColorIndex: 0,
+  transparentColorFlag: false,
+  disposalMethod: 0,
+  userInput: false,
+}) => {
+  const byteSize = 4;
+  let transparentColorIndex = 0;
+
+  const disposalMethodArray = toBits(options.disposalMethod).bits;
+  const packedFieldArray = [0, 0, 0, 0, 0, 0, 0, 0];
+
+  [5, 6, 7].forEach((i) => {
+    if (disposalMethodArray[i]) {
+      packedFieldArray[i - 2] = 1;
+    }
+  });
+  if (options.userInput) {
+    packedFieldArray[6] = 1;
+  }
+  if (options.transparentColorFlag) {
+    packedFieldArray[7] = 1;
+    if (options.transparentColorIndex) {
+      transparentColorIndex = options.transparentColorIndex;
+    }
+  }
+
+  const packedField = fromBits(packedFieldArray);
+  const delayArray = lsb(options.delay);
+
+  return [
+    EXTENSION_INTRODUCER,
+    GRAPHIC_CONTROL_LABEL,
+    byteSize,
+    packedField,
+    delayArray[0],
+    delayArray[1],
+    transparentColorIndex,
+    BLOCK_TERMINATOR,
+  ];
+};
+
 export default {
   HEADER,
+  DISPOSAL_METHODS,
   lsb,
   toBits,
   fromBits,
@@ -156,4 +208,5 @@ export default {
   byteLength,
   uint8ToBase64String,
   logicalScreenDescriptor,
+  gce,
 };
