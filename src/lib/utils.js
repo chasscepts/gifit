@@ -218,6 +218,40 @@ const gce = (options = {
   ];
 };
 
+const imageDescriptor = (options = {
+  left: 0, top: 0, width: 0, height: 0, interlace: false, sorted: false, lctLength: 0,
+}) => {
+  const left = lsb(options.left);
+  const top = lsb(options.top);
+  const width = lsb(options.width);
+  const height = lsb(options.height);
+  const packedField = [0, 0, 0, 0, 0, 0, 0, 0];
+  if (options.lctLength) {
+    packedField[0] = 1;
+    const lct = toBinary(options.lctLength, 3);
+    [0, 1, 2].forEach((i) => {
+      if (lct[i]) {
+        packedField[i + 5] = 1;
+      }
+    });
+  }
+  if (options.interlace) {
+    packedField[1] = 1;
+  }
+  if (options.sorted) {
+    packedField[2] = 1;
+  }
+
+  return [
+    0x2C,
+    left[0], left[1],
+    top[0], top[1],
+    width[0], width[1],
+    height[0], height[1],
+    fromBits(packedField),
+  ];
+};
+
 export default {
   HEADER,
   DISPOSAL_METHODS,
@@ -230,4 +264,5 @@ export default {
   logicalScreenDescriptor,
   loopingBlock,
   gce,
+  imageDescriptor,
 };
