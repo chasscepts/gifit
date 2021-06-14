@@ -304,10 +304,10 @@ const normalizeColorTable = (ct) => {
 };
 
 const initCodeTable = (minCodeSize) => {
-  const codeTable = [...Array(2 ** minCodeSize)].map((val, i) => i);
-  const CC = codeTable.length;
+  const codeTable = [...Array(2 ** minCodeSize)].map((val, i) => `${i}`);
+  const CC = `${codeTable.length}`;
   codeTable.push(CC);
-  const EOI = codeTable.length;
+  const EOI = `${codeTable.length}`;
   codeTable.push(EOI);
 
   return { codeTable, CC, EOI };
