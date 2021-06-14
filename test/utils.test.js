@@ -210,7 +210,7 @@ describe('Utils', () => {
 
   describe('initCodeTable', () => {
     it('correctly initializes code table when minimum codeSize is 2', () => {
-      expect(Utils.initCodeTable(4)).toStrictEqual(
+      expect(Utils.initCodeTable(2)).toStrictEqual(
         { codeTable: ['0', '1', '2', '3', '4', '5'], CC: 4, EOI: 5 },
       );
     });
@@ -220,9 +220,47 @@ describe('Utils', () => {
       for (let i = 0; i <= 257; i += 1) {
         codeTable.push(`${i}`);
       }
-      expect(Utils.initCodeTable(256)).toStrictEqual(
+      expect(Utils.initCodeTable(8)).toStrictEqual(
         { codeTable, CC: 256, EOI: 257 },
       );
+    });
+  });
+
+  describe('BitStream', () => {
+    it('correctly transcode a single number', () => {
+      const stream = Utils.bitStream();
+      stream.push(4, 3);
+      stream.flush();
+      expect(stream.toArray()).toStrictEqual([4]);
+    });
+
+    it('correctly transcodes a sequence of random numbers at bit size 8', () => {
+      const rand = () => Math.floor(256 * Math.random());
+      const times = rand();
+      const stream = Utils.bitStream();
+      const expected = Array(times);
+      Utils.loop(times, (i) => {
+        const number = rand();
+        expected[i] = number;
+        stream.push(number, 8);
+      });
+      stream.flush();
+      expect(stream.toArray()).toStrictEqual(expected);
+    });
+
+    it('correctly transcodes a sample sequence of numbers written at different sizes', () => {
+      const stream = Utils.bitStream();
+      [
+        { number: 4, size: 3 },
+        { number: 8, size: 4 },
+        { number: 17, size: 5 },
+        { number: 0, size: 3 },
+        { number: 9, size: 4 },
+        { number: 11, size: 4 },
+        { number: 2, size: 3 },
+      ].forEach((sample) => stream.push(sample.number, sample.size));
+      stream.flush();
+      expect(stream.toArray()).toStrictEqual([196, 136, 92, 1]);
     });
   });
 });
