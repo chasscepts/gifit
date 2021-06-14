@@ -303,12 +303,12 @@ const normalizeColorTable = (ct) => {
   };
 };
 
-const initCodeTable = (minCodeSize) => {
-  const codeTable = [...Array(2 ** minCodeSize)].map((val, i) => `${i}`);
-  const CC = `${codeTable.length}`;
-  codeTable.push(CC);
-  const EOI = `${codeTable.length}`;
-  codeTable.push(EOI);
+const initCodeTable = (size) => {
+  const codeTable = [...Array(size)].map((val, i) => `${i}`);
+  const CC = codeTable.length;
+  codeTable.push(`${CC}`);
+  const EOI = codeTable.length;
+  codeTable.push(`${EOI}`);
 
   return { codeTable, CC, EOI };
 };

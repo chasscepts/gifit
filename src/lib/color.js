@@ -27,6 +27,7 @@ const RGB = (r, g, b) => {
     g,
     b,
     compare,
+    toString: () => `rgb(${r}, ${g}, ${b})`,
   };
 };
 
@@ -48,6 +49,8 @@ const colorUtils = (colors) => {
     wrappers.push(wrapper);
   }
   wrappers.sort((a, b) => a.color.compare(b.color));
+  const { length } = wrappers;
+  let rgbs;
 
   /**
    *
@@ -73,9 +76,16 @@ const colorUtils = (colors) => {
   };
 
   return {
+    length,
     indexOf: (...args) => {
       const rgb = args.length === 1 ? args[0] : RGB(args[0], args[1], args[2]);
       return binarySearch(rgb, 0, wrappers.length - 1);
+    },
+    colors: () => {
+      if (!rgbs) {
+        rgbs = wrappers.map((w) => w.color);
+      }
+      return rgbs;
     },
   };
 };
