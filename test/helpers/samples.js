@@ -71,7 +71,35 @@ const TRAFFICLIGHT = {
   ],
 };
 
+const RAW_SQUARE_IMAGE = (() => {
+  const raw = [];
+  const times = (t, callback) => {
+    [...Array(t)].forEach((val, i) => callback(i));
+  };
+
+  times(3, () => {
+    times(5, () => raw.push(255, 0, 0));
+    times(5, () => raw.push(0, 0, 255));
+  });
+  times(2, () => {
+    times(3, () => raw.push(255, 0, 0));
+    times(4, () => raw.push(255, 255, 255));
+    times(3, () => raw.push(0, 0, 255));
+  });
+  times(2, () => {
+    times(3, () => raw.push(0, 0, 255));
+    times(4, () => raw.push(255, 255, 255));
+    times(3, () => raw.push(255, 0, 0));
+  });
+  times(3, () => {
+    times(5, () => raw.push(0, 0, 255));
+    times(5, () => raw.push(255, 0, 0));
+  });
+  return raw;
+})();
+
 export default {
   SQUARE_IMAGE,
   TRAFFICLIGHT,
+  RAW_SQUARE_IMAGE,
 };
