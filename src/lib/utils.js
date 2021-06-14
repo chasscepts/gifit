@@ -23,6 +23,24 @@ const HEADER = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]; // GIF89a
 
 const lsb = (number) => [number & 0xFF, number >> 8];
 
+const loop = (times, callback) => [...Array(times)].forEach((val, i) => callback(i));
+
+const binary = (() => ({
+  bits: (number, size) => {
+    let mask = 1;
+    const result = Array(size);
+    loop(size, (i) => {
+      result[i] = !!(mask & number);
+      mask <<= 1;
+    });
+    return result;
+  },
+  decimal: (bits) => bits.reduce((memo, current, idx) => {
+    if (current) memo += 2 ** idx;
+    return memo;
+  }, 0),
+}))();
+
 /**
  * Converts a number to an array of length 8.
  * Each item in the array is set to true if corresponding bit
@@ -68,9 +86,11 @@ const toBits = (number) => {
  */
 const fromBits = (bits) => {
   let accm = 0;
-  for (let i = 0; i < 8; i += 1) {
+  const n = bits.length;
+  const m = n - 1;
+  for (let i = 0; i < n; i += 1) {
     if (bits[i]) {
-      accm += 2 ** (7 - i);
+      accm += 2 ** (m - i);
     }
   }
   return accm;
@@ -303,8 +323,8 @@ const normalizeColorTable = (ct) => {
   };
 };
 
-const initCodeTable = (size) => {
-  const codeTable = [...Array(size)].map((val, i) => `${i}`);
+const initCodeTable = (n) => {
+  const codeTable = [...Array(2 ** n)].map((val, i) => `${i}`);
   const CC = codeTable.length;
   codeTable.push(`${CC}`);
   const EOI = codeTable.length;
@@ -313,11 +333,46 @@ const initCodeTable = (size) => {
   return { codeTable, CC, EOI };
 };
 
+const bitStream = () => {
+  const stream = [];
+  const BYTE_SIZE = 8;
+  let bitsPipe = [];
+
+  const trimPipe = () => {
+    while (bitsPipe.length >= BYTE_SIZE) {
+      stream.push(binary.decimal(bitsPipe.slice(0, BYTE_SIZE)));
+      bitsPipe = bitsPipe.slice(BYTE_SIZE);
+    }
+  };
+
+  const push = (number, bitSize) => {
+    const bits = binary.bits(number, bitSize);
+    bits.forEach((b) => bitsPipe.push(b));
+    trimPipe();
+  };
+
+  const flush = () => {
+    trimPipe();
+    if (bitsPipe.length <= 0) return;
+    while (bitsPipe.length < BYTE_SIZE) {
+      bitsPipe.push(false);
+    }
+    stream.push(binary.decimal(bitsPipe));
+  };
+
+  return {
+    push,
+    flush,
+    toArray: () => [...stream],
+  };
+};
+
 export default {
   HEADER,
   DISPOSAL_METHODS,
   TRAILER,
   lsb,
+  loop,
   toBits,
   fromBits,
   toBinary,
@@ -329,4 +384,5 @@ export default {
   imageDescriptor,
   normalizeColorTable,
   initCodeTable,
+  bitStream,
 };
