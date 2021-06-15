@@ -362,6 +362,61 @@ const bitStream = () => {
   };
 };
 
+const imageBitStream = (n, stream = null) => {
+  if (!stream) {
+    stream = [];
+  }
+  stream.push(n);
+  const BYTE_SIZE = 8;
+  let bitsPipe = [];
+  let size = 0;
+  let sizeIndex = stream.length;
+  stream.push(0);
+
+  const addByte = (byte) => {
+    if (size === 255) {
+      sizeIndex = stream.length;
+      size = 0;
+      stream.push(0);
+    }
+    stream.push(byte);
+    size += 1;
+    stream[sizeIndex] = size;
+  };
+
+  const trimPipe = () => {
+    while (bitsPipe.length >= BYTE_SIZE) {
+      addByte(binary.decimal(bitsPipe.slice(0, BYTE_SIZE)));
+      bitsPipe = bitsPipe.slice(BYTE_SIZE);
+    }
+  };
+
+  const push = (number, bitSize) => {
+    const bits = binary.bits(number, bitSize);
+    bits.forEach((b) => bitsPipe.push(b));
+    trimPipe();
+  };
+
+  const flush = () => {
+    trimPipe();
+    if (bitsPipe.length > 0) {
+      while (bitsPipe.length < BYTE_SIZE) {
+        bitsPipe.push(false);
+      }
+      addByte(binary.decimal(bitsPipe));
+    }
+    if (size !== 0) {
+      stream.push(0);
+    }
+  };
+
+  return {
+    push,
+    flush,
+    toArray: () => [...stream],
+  };
+};
+
 export default {
   HEADER,
   DISPOSAL_METHODS,
@@ -380,4 +435,5 @@ export default {
   normalizeColorTable,
   initCodeTable,
   bitStream,
+  imageBitStream,
 };
