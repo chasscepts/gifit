@@ -261,4 +261,49 @@ describe('Utils', () => {
       expect(stream.toArray()).toStrictEqual([196, 136, 92, 1]);
     });
   });
+
+  describe('ImageBitStream', () => {
+    it('correctly transcode a single number', () => {
+      const output = [];
+      const stream = Utils.imageBitStream(2, output);
+      stream.push(4, 3);
+      stream.flush();
+      expect(output).toStrictEqual([2, 1, 4, 0]);
+    });
+
+    it('correctly transcodes 300 length array of random numbers at bit size 8', () => {
+      const rand = () => Math.floor(256 * Math.random());
+      const times = 300;
+      const output = [];
+      const stream = Utils.imageBitStream(7, output);
+      const expected = [7, 255];
+      Utils.loop(times, (i) => {
+        const number = rand();
+        if (i === 255) {
+          expected.push(45); // remaining number of bytes
+        }
+        expected.push(number);
+        stream.push(number, 8);
+      });
+      expected.push(0);
+      stream.flush();
+      expect(output).toStrictEqual(expected);
+    });
+
+    it('correctly transcodes a sample sequence of numbers written at different sizes', () => {
+      const output = [];
+      const stream = Utils.imageBitStream(2, output);
+      [
+        { number: 4, size: 3 },
+        { number: 8, size: 4 },
+        { number: 17, size: 5 },
+        { number: 0, size: 3 },
+        { number: 9, size: 4 },
+        { number: 11, size: 4 },
+        { number: 2, size: 3 },
+      ].forEach((sample) => stream.push(sample.number, sample.size));
+      stream.flush();
+      expect(output).toStrictEqual([2, 4, 196, 136, 92, 1, 0]);
+    });
+  });
 });
