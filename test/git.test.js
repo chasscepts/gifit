@@ -25,10 +25,11 @@ describe('gif', () => {
       const ct = color.colorUtils([
         0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00,
       ]);
-      expect(gif.encode(samples.RAW_SQUARE_IMAGE, ct)).toStrictEqual([
-        4, 1, 6, 6, 2, 9, 9, 7, 8, 10, 2, 12, 1, 14, 15, 6, 0, 21, 0, 10, 7, 22, 23,
-        18, 26, 7, 10, 29, 13, 24, 12, 18, 16, 36, 12, 5,
-      ]);
+      const enc = [
+        0x8C, 0x2D, 0x99, 0x87, 0x2A, 0x1C, 0xDC, 0x33, 0xA0, 0x02, 0x75, 0xEC,
+        0x95, 0xFA, 0xA8, 0xDE, 0x60, 0x8C, 0x04, 0x91, 0x4C, 0x01,
+      ];
+      expect(gif.encode(samples.RAW_SQUARE_IMAGE, ct, 2)).toStrictEqual(enc);
     });
   });
 });

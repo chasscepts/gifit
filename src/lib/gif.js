@@ -1,28 +1,38 @@
 import Utils from './utils';
 
-// Initialize code table
-// Always start by sending a clear code to the code stream.
-// Read first index from index stream. This value is now the value for the index buffer
-// <LOOP POINT>
-// Get the next index from the index stream to the index buffer. We will call this index, K
-// Is index buffer + K in our code table?
-// Yes:
-//   add K to the end of the index buffer
-//   if there are more indexes, return to LOOP POINT
-// No:
-//   Add a row for index buffer + K into our code table with the next smallest code
-//   Output the code for just the index buffer to our code steam
-//   Index buffer is set to K
-//   K is set to nothing
-//   if there are more indexes, return to LOOP POINT
-// Output code for contents of index buffer
-// Output end-of-information code
+const minimumBitsSize = (number) => {
+  if (number < 8) return 3;
+  if (number < 16) return 4;
+  if (number < 32) return 5;
+  if (number < 64) return 6;
+  if (number < 128) return 7;
+  if (number < 256) return 8;
+  if (number < 512) return 9;
+  if (number < 1024) return 10;
+  if (number < 2048) return 11;
+  if (number < 4096) return 12;
+  return 0;
+};
 
-const encode = (raw, ct) => {
+const encode = (raw, ct, n) => {
   const index = (start) => ct.indexOf(raw[start], raw[start + 1], raw[start + 2]);
-  // const MIN_CODE_SIZE = 8;
-  const { codeTable, CC, EOI } = Utils.initCodeTable(ct.length);
-  const codeStream = [CC];
+  const table = Utils.initCodeTable(n);
+  const CC = table.length - 2;
+  const EOI = CC + 1;
+  let codeTable = [...table];
+  const stream = Utils.bitStream();
+  let codeSize = n + 1;
+  stream.push(CC, codeSize);
+
+  const addToTable = (val) => {
+    const codeTableLength = codeTable.push(val);
+    codeSize = minimumBitsSize(codeTableLength - 1);
+    if (codeSize === 0) {
+      codeTable = [...table];
+      codeSize = n + 1;
+      stream.push(CC, codeSize);
+    }
+  };
 
   let lastBufferIndex = index(0);
   let indexBuffer = `${lastBufferIndex}`;
@@ -32,8 +42,8 @@ const encode = (raw, ct) => {
     const temp = indexBuffer + k;
     const tempIndex = codeTable.indexOf(temp);
     if (tempIndex < 0) {
-      codeTable.push(temp);
-      codeStream.push(lastBufferIndex);
+      stream.push(lastBufferIndex, codeSize);
+      addToTable(temp);
       indexBuffer = `${k}`;
       lastBufferIndex = k;
     } else {
@@ -42,11 +52,11 @@ const encode = (raw, ct) => {
     }
   }
 
-  codeStream.push(lastBufferIndex);
-  codeStream.push(EOI);
+  stream.push(lastBufferIndex, codeSize);
+  stream.push(EOI, codeSize);
+  stream.flush();
 
-  // console.log(codeTable);
-  return codeStream;
+  return stream.toArray();
 };
 
 /**

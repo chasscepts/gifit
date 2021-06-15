@@ -1,5 +1,6 @@
 import eventEmitter from './lib/event-emitter';
 import mixin from './lib/mixin';
+import test from './testScript';
 import './assets/css/style.scss';
 
 const thumbnailDimensions = { width: 320, height: 200 };
@@ -17,6 +18,7 @@ const algorithms = {
   K_CUT: 'K Means',
 };
 
+// Default Color Table
 const DCT = {
   algorithm: algorithms.MEDIAN_CUT, ctLength: 256, order: 8, dither: true,
 };
@@ -732,3 +734,5 @@ const thumbnail = (() => {
 
   clear();
 })();
+
+test.run();

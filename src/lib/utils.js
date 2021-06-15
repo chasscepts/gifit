@@ -323,20 +323,13 @@ const normalizeColorTable = (ct) => {
   };
 };
 
-const initCodeTable = (n) => {
-  const codeTable = [...Array(2 ** n)].map((val, i) => `${i}`);
-  const CC = codeTable.length;
-  codeTable.push(`${CC}`);
-  const EOI = codeTable.length;
-  codeTable.push(`${EOI}`);
-
-  return { codeTable, CC, EOI };
-};
+const initCodeTable = (n) => [...Array((2 ** n) + 2)].map((val, i) => `${i}`);
 
 const bitStream = () => {
   const stream = [];
   const BYTE_SIZE = 8;
   let bitsPipe = [];
+  const raw = [];
 
   const trimPipe = () => {
     while (bitsPipe.length >= BYTE_SIZE) {
@@ -346,6 +339,7 @@ const bitStream = () => {
   };
 
   const push = (number, bitSize) => {
+    raw.push(number);
     const bits = binary.bits(number, bitSize);
     bits.forEach((b) => bitsPipe.push(b));
     trimPipe();
@@ -364,6 +358,7 @@ const bitStream = () => {
     push,
     flush,
     toArray: () => [...stream],
+    raw: () => raw,
   };
 };
 

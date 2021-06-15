@@ -211,7 +211,7 @@ describe('Utils', () => {
   describe('initCodeTable', () => {
     it('correctly initializes code table when minimum codeSize is 2', () => {
       expect(Utils.initCodeTable(2)).toStrictEqual(
-        { codeTable: ['0', '1', '2', '3', '4', '5'], CC: 4, EOI: 5 },
+        ['0', '1', '2', '3', '4', '5'],
       );
     });
 
@@ -220,9 +220,7 @@ describe('Utils', () => {
       for (let i = 0; i <= 257; i += 1) {
         codeTable.push(`${i}`);
       }
-      expect(Utils.initCodeTable(8)).toStrictEqual(
-        { codeTable, CC: 256, EOI: 257 },
-      );
+      expect(Utils.initCodeTable(8)).toStrictEqual(codeTable);
     });
   });
 
