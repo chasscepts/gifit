@@ -59,6 +59,49 @@ const encode = (raw, ct, n) => {
   return stream.toArray();
 };
 
+const encodeImage = (raw, ct, n, gifArray) => {
+  const index = (start) => ct.indexOf(raw[start], raw[start + 1], raw[start + 2]);
+  const table = Utils.initCodeTable(n);
+  const CC = table.length - 2;
+  const EOI = CC + 1;
+  let codeTable = [...table];
+  const stream = Utils.imageBitStream(n, gifArray);
+  let codeSize = n + 1;
+  stream.push(CC, codeSize);
+
+  const addToTable = (val) => {
+    const codeTableLength = codeTable.push(val);
+    codeSize = minimumBitsSize(codeTableLength - 1);
+    if (codeSize === 0) {
+      codeTable = [...table];
+      codeSize = n + 1;
+      stream.push(CC, codeSize);
+    }
+  };
+
+  let lastBufferIndex = index(0);
+  let indexBuffer = `${lastBufferIndex}`;
+
+  for (let i = 3, n = raw.length - 2; i < n; i += 3) {
+    const k = index(i);
+    const temp = indexBuffer + k;
+    const tempIndex = codeTable.indexOf(temp);
+    if (tempIndex < 0) {
+      stream.push(lastBufferIndex, codeSize);
+      addToTable(temp);
+      indexBuffer = `${k}`;
+      lastBufferIndex = k;
+    } else {
+      indexBuffer = temp;
+      lastBufferIndex = tempIndex;
+    }
+  }
+
+  stream.push(lastBufferIndex, codeSize);
+  stream.push(EOI, codeSize);
+  stream.flush();
+};
+
 /**
  *{{ width: {Number}, height: 0, resolution: 0, sorted: false, ctLength: 0,}}
  * @param {Object} lsd Logical Screen Descriptor Parameters
@@ -106,4 +149,5 @@ const pack = (lsd, gct, loopBlock, images) => {
 export default {
   pack,
   encode,
+  encodeImage,
 };
