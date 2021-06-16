@@ -306,4 +306,22 @@ describe('Utils', () => {
       expect(output).toStrictEqual([2, 4, 196, 136, 92, 1, 0]);
     });
   });
+
+  describe('logByLog2', () => {
+    it('throws exception when input is 0 or less', () => {
+      [0, -1, -100].forEach((num) => {
+        expect(() => Utils.logByLog2(num)).toThrow();
+      });
+    });
+
+    it('returns 0 for input 1', () => {
+      expect(Utils.logByLog2(1)).toBe(0);
+    });
+
+    it('return correct values for sample inputs', () => {
+      [[2, 1], [8, 3], [256, 8], [4096, 12], [65536, 16]].forEach((pair) => {
+        expect(Utils.logByLog2(pair[0])).toBe(pair[1]);
+      });
+    });
+  });
 });
