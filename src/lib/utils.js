@@ -111,6 +111,20 @@ const toBinary = (byte, numberOfBits) => {
   return rslt;
 };
 
+const logByLog2 = (length) => {
+  if (length <= 0) throw new Error('length cannot be less than or equal to zero');
+  let n = 0;
+  let memo = 1;
+  while (memo < length) {
+    memo *= 2;
+    n += 1;
+  }
+  if (memo > length) {
+    return Math.log(length) / Math.log(2);
+  }
+  return n;
+};
+
 const byteLength = (ctLength) => {
   const getLength = (n) => 2 ** (n + 1);
   let N = 1;
@@ -164,7 +178,7 @@ const logicalScreenDescriptor = (
 ) => {
   const rslt = [...lsb(options.width), ...lsb(options.height)];
   const ctBits = [0, 0, 0, 0, 0, 0, 0, 0];
-  if (options.ctLength) {
+  if (typeof options.ctLength === 'number' && options.ctLength >= 0) {
     const byteLength = NBytes(options.ctLength);
     let pos = 0;
     ctBits[pos] = 1;
@@ -436,4 +450,5 @@ export default {
   initCodeTable,
   bitStream,
   imageBitStream,
+  logByLog2,
 };
