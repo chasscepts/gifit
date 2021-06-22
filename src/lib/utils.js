@@ -113,16 +113,12 @@ const toBinary = (byte, numberOfBits) => {
 
 const logByLog2 = (length) => {
   if (length <= 0) throw new Error('length cannot be less than or equal to zero');
-  let n = 0;
-  let memo = 1;
-  while (memo < length) {
-    memo *= 2;
-    n += 1;
-  }
-  if (memo > length) {
-    return Math.log(length) / Math.log(2);
-  }
-  return n;
+  return Math.log(length) / Math.log(2);
+};
+
+const isPerfectPowerOf2 = (length) => {
+  const n = logByLog2(length);
+  return Math.floor(n) === n;
 };
 
 const byteLength = (ctLength) => {
@@ -451,4 +447,5 @@ export default {
   bitStream,
   imageBitStream,
   logByLog2,
+  isPerfectPowerOf2,
 };

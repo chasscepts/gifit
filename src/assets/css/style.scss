@@ -72,6 +72,10 @@ hr {
   margin-top: 9px;
 }
 
+.me-5px {
+  margin-right: 5px;
+}
+
 .py-10px {
   padding-top: 10px;
   padding-bottom: 10px;
@@ -101,6 +105,8 @@ hr {
 .page-footer {
   font-size: 0.8rem;
   line-height: 14px;
+  max-height: 42px;
+  overflow: hidden;
 }
 
 .image-btn {
@@ -143,78 +149,159 @@ hr {
   }
 }
 
-.sidebar {
-  position: relative;
-  flex: 0 0 350px;
-  max-width: 0;
-  height: 100%;
-  transition: max-width 0.3s linear;
-  padding: 40px 0 50px;
-  overflow: hidden;
-
-  &.open {
-    max-width: 380px;
-  }
-
-  .sidebar-inner {
-    background-color: $color-carton;
-    height: 100%;
-    overflow-y: auto;
-    padding: 2px 10px 5px;
-  }
-
-  .tab-headers {
-    display: flex;
-  }
-
-  .tab-header {
-    outline: none;
-    border: none;
-    background-color: $color-blue-l1;
-    padding: 4px 10px;
-    border-radius: 4px 4px 0 0;
-    color: $color-light;
-    cursor: pointer;
-
-    &.active {
-      background-color: $color-blue-l2;
-    }
-  }
-
-  .tab-items {
+.page {
+  .sidebar {
     position: relative;
+    flex: 0 0 350px;
+    max-width: 0;
+    height: 100%;
+    transition: max-width 0.3s linear;
+    padding: 40px 0 50px;
+    overflow: hidden;
 
-    .item-wrap {
-      background-color: $color-blue-l2;
-      padding: 4px 5px;
+    .sidebar-inner {
+      background-color: $color-carton;
+      height: 100%;
+      overflow-y: auto;
+      padding: 2px 10px 5px;
     }
 
-    .tab-item {
-      display: none;
+    .tab-headers {
+      display: flex;
+    }
+
+    .tab-header {
+      outline: none;
+      border: none;
+      background-color: $color-blue-l1;
+      padding: 4px 10px;
+      border-radius: 4px 4px 0 0;
+      color: $color-light;
+      cursor: pointer;
 
       &.active {
-        display: block;
+        background-color: $color-blue-l2;
+      }
+    }
+
+    .tab-items {
+      position: relative;
+
+      .item-wrap {
+        background-color: $color-blue-l2;
+        padding: 4px 5px;
+      }
+
+      .tab-item {
+        display: none;
+
+        &.active {
+          display: block;
+        }
+      }
+    }
+
+    .simulation-canvas {
+      background-color: #000;
+    }
+
+    .player {
+      width: 320px;
+      height: 200px;
+      background-color: #000;
+    }
+
+    .board-ct-controls {
+      margin-top: 15px;
+    }
+
+    .image-dimensions-legend {
+      margin-top: 10px;
+      color: $color-blue-l2;
+    }
+  }
+
+  .thumbnails-bg {
+    overflow-y: auto;
+
+    .thumbnails-container {
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      width: 100%;
+
+      @media (min-width: 200px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      @media (min-width: 380px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      @include media-break(sm) {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      @include media-break(md) {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      @include media-break(lg) {
+        grid-template-columns: repeat(8, 1fr);
+      }
+
+      @media (min-width: 1100px) {
+        grid-template-columns: repeat(9, 1fr);
+      }
+
+      @include media-break(xl) {
+        grid-template-columns: repeat(10, 1fr);
       }
     }
   }
 
-  .simulation-canvas {
-    background-color: #000;
-  }
+  &.sidebar-open {
+    .sidebar {
+      max-width: 380px;
+    }
 
-  .player {
-    width: 320px;
-    height: 200px;
-    background-color: #000;
-  }
+    .thumbnails-bg {
+      .thumbnails-container {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        width: 100%;
 
-  .board-ct-controls {
-    margin: 15px 0;
-  }
+        @include media-break(sm) {
+          grid-template-columns: repeat(2, 1fr);
+        }
 
-  .image-dimensions-legend {
-    margin-top: 10px;
-    color: $color-blue-l2;
+        @include media-break(md) {
+          grid-template-columns: repeat(4, 1fr);
+        }
+
+        @include media-break(lg) {
+          grid-template-columns: repeat(6, 1fr);
+        }
+
+        @media (min-width: 1100px) {
+          grid-template-columns: repeat(7, 1fr);
+        }
+
+        @include media-break(xl) {
+          grid-template-columns: repeat(8, 1fr);
+        }
+      }
+    }
+  }
+}
+
+.gct-image-display {
+  font-weight: bold;
+  font-size: 0.8rem;
+  color: $color-alert;
+  display: none;
+
+  &.is-gct {
+    display: block;
   }
 }
 
@@ -250,7 +337,9 @@ hr {
 
   &.slider-group {
     display: flex;
+    align-items: center;
     background-color: #576977;
+    user-select: none;
 
     .slider-con {
       flex: 1;
@@ -266,6 +355,40 @@ hr {
         outline: none;
       }
     }
+
+    .slider-line {
+      position: relative;
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      border: 1px solid #7d8992;
+      margin: 0 7px;
+      background-color: rgb(238, 245, 253);
+
+      .fill {
+        background-color: $color-blue-l4;
+        height: 100%;
+        width: 0px;
+        border-radius: 3px;
+        position: absolute;
+
+        .knob {
+          position: absolute;
+          right: -6px;
+          top: -4px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background-color: rgb(240, 233, 198);
+          background-size: 100% 100%;
+          background-image: url(../images/handle-sm.png);
+        }
+      }
+    }
+
+    .slider-value-span {
+      border-radius: 3px;
+    }
   }
 
   span {
@@ -276,6 +399,20 @@ hr {
     color: $color-light;
     font-weight: bold;
     font-size: 0.7rem;
+    text-align: center;
+
+    &.sm {
+      width: 22px;
+    }
+
+    &.check-border {
+      padding: 3px;
+      background-color: $color-blue-l4;
+
+      input[type="checkbox"] {
+        vertical-align: middle;
+      }
+    }
   }
 }
 
@@ -333,17 +470,10 @@ hr {
   }
 }
 
-.thumbnails-container {
-  flex-flow: row wrap;
-  max-width: 100%;
-  overflow-y: auto;
-}
-
 .thumbnail {
   border: 2px solid #1d1c1c;
-  min-width: 100px;
+  width: 100%;
   min-height: 100px;
-  max-width: 100px;
   max-height: 100px;
   background-color: $color-blue-l1;
 
@@ -366,6 +496,7 @@ hr {
   color: $color-blue-l2;
   border: 2px solid $color-light;
   border-radius: 5px;
+  max-width: 400px;
 
   &.error {
     border-color: $color-alert;
@@ -382,5 +513,31 @@ hr {
 
   .heading {
     font-size: 1.1rem;
+  }
+}
+
+.thumnail-context-menu {
+  position: absolute;
+  width: 180px;
+  background-color: $color-light;
+  border: 1px solid $color-faint;
+
+  .menu-item {
+    display: block;
+    cursor: pointer;
+    padding: 7px 10px;
+    transition: all 0.3s linear;
+
+    &.disabled {
+      color: $color-muted;
+      background-color: #e7ecf1;
+      cursor: default;
+      border-top: 1px solid #ced3d8;
+    }
+
+    &:hover:not(.disabled) {
+      color: $color-light;
+      background-color: $color-blue-l4;
+    }
   }
 }

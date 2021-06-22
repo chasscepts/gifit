@@ -3,13 +3,134 @@ import mixin from './lib/mixin';
 import test from './testScript';
 import './assets/css/style.scss';
 
-const thumbnailDimensions = { width: 320, height: 200 };
+// TODO: Remove //////////////////////////////////////////
+import testVideo from './assets/images/video.mp4';
+
+(() => {
+  document.querySelector('#player').src = testVideo;
+})();
+// ////////////////////////////////////////////////////////
+
+const newSlider = (
+  () => (parent, label, min = 0, max = 10, initialValue = 5, precision = 1, valueWidth = 30) => {
+    const sliderGroup = document.createElement('div');
+    sliderGroup.classList.add('control-group', 'slider-group', 'flex-1');
+    parent.append(sliderGroup);
+
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = label;
+    sliderGroup.append(labelSpan);
+
+    const slideLine = document.createElement('div');
+    slideLine.classList.add('slider-line');
+    const fill = document.createElement('div');
+    fill.classList.add('fill');
+    slideLine.append(fill);
+    const knob = document.createElement('knob');
+    knob.classList.add('knob');
+    fill.append(knob);
+    sliderGroup.append(slideLine);
+
+    const valueSpan = document.createElement('span');
+    valueSpan.classList.add('slider-value-span');
+    valueSpan.style.width = `${valueWidth}px`;
+    sliderGroup.append(valueSpan);
+
+    const range = max - min;
+    const delta = 0.01;
+    let dragging = false;
+    let valueChangedListener;
+    let value;
+    let width;
+
+    const valueChange = (newWidth, newValue) => {
+      width = newWidth;
+      value = newValue;
+      fill.style.width = `${width}px`;
+      valueSpan.textContent = precision === 0 ? Math.round(value) : value.toFixed(precision);
+      if (valueChangedListener) {
+        valueChangedListener(value);
+      }
+    };
+
+    valueChange((((initialValue - min) / range) * (slideLine.clientWidth - 2)), initialValue);
+
+    const reinit = () => {
+      width = (((initialValue - min) / range) * (slideLine.clientWidth - 2));
+      fill.style.width = `${width}px`;
+    };
+
+    const drag = (e) => {
+      let tempWidth = e.clientX - fill.getBoundingClientRect().x;
+      const maxWidth = slideLine.clientWidth - 2;
+      if (tempWidth <= 0) {
+        if (width === 0) return;
+        tempWidth = 0;
+        value = min;
+      } else if (tempWidth > maxWidth) {
+        if (width === maxWidth) return;
+        tempWidth = maxWidth;
+        value = max;
+      } else {
+        if (Math.abs(tempWidth - width) < delta) return;
+        value = min + ((range * tempWidth) / maxWidth);
+      }
+      valueChange(tempWidth, value);
+    };
+
+    const mouseup = () => {
+      dragging = false;
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', mouseup);
+    };
+
+    knob.addEventListener('mousedown', (e) => {
+      dragging = true;
+      document.addEventListener('mouseup', mouseup);
+      document.addEventListener('mousemove', (e2) => {
+        if (dragging) {
+          drag(e2);
+        }
+      });
+      drag(e);
+    });
+
+    slideLine.addEventListener('click', drag);
+
+    return {
+      set onValueChanged(callback) {
+        valueChangedListener = callback;
+      },
+      get value() {
+        return value;
+      },
+      reinit,
+    };
+  }
+)();
+
+// const thumbnailDimensions = { width: 320, height: 200 };
 const emitter = eventEmitter();
 const events = {
   CLEAR_FRAMES: 'clear frames',
-  ADD_FRAME: 'add frame',
+  GRAB_FRAME: 'grab frame',
   FRAME_SELECTED: 'frame selected',
+  FRAME_SELECTION_CLEARED: 'frame selection cleared',
+  LOCK_CANVAS_DIMENSIONS: 'lock_dimensions',
+  SIMULATION_TAB_FIRST_TIME_OPEN: 'simulation_tab_open',
+  GCT_FRAME_CHANGE: 'gct_frame_change',
 };
+
+const lengthOptions = (() => {
+  const MAX = 256;
+  let options = '';
+  let current = 2;
+  while (current < MAX) {
+    options += `<option>${current}</option>`;
+    current *= 2;
+  }
+  return options;
+})();
 
 const algorithms = {
   HISTOGRAM: 'Histogram',
@@ -20,60 +141,23 @@ const algorithms = {
 
 // Default Color Table
 const DCT = {
-  algorithm: algorithms.MEDIAN_CUT, ctLength: 256, order: 8, dither: true,
+  algorithm: algorithms.MEDIAN_CUT, dither: true, index: 0, length: 256,
 };
 
 const gct = (() => {
   let ct = DCT;
   ct = mixin({}, ct);
 
-  const orderSelect = document.querySelector('#gct-order-select');
   const lengthSelect = document.querySelector('#gct-length-select');
+  lengthSelect.innerHTML = lengthOptions;
   const ditherCheck = document.querySelector('#gct-dither-check');
-  // const histogramRadio = document.querySelector('#local-histogram');
-  // const medianCutRadio = document.querySelector('#local-median-cut');
-  // const modifiedHistogramRadio = document.querySelector('#local-modified-histogram');
-  // const kCutRadio = document.querySelector('#local-k-cut');
-  // const algoRadios = [histogramRadio, medianCutRadio, modifiedHistogramRadio, kCutRadio];
 
-  const setOrder = (order) => {
-    ct.order = order;
+  const algoRadios = document.querySelectorAll('.gct-algo-radio');
 
-    let max = 256;
-    if (ct.algorithm === algorithms.HISTOGRAM) {
-      max = order * order * order;
-    } else if (ct.algorithm === algorithms.MEDIAN_CUT) {
-      max = 2 ** order;
-    }
-    if (max > 256) {
-      max = 256;
-    }
-
-    let options = '<option>2</option>';
-    let i = 2;
-    let val = 2;
-    while (i <= 8) {
-      const temp = 2 ** i;
-      if (temp > max) {
-        break;
-      }
-      val = temp;
-      options += `<option>${temp}</option>`;
-      i += 1;
-    }
-    lengthSelect.innerHTML = options;
-
-    if (ct.ctLength > val) {
-      ct.ctLength = val;
-    }
-    lengthSelect.value = ct.ctLength;
-  };
-
-  document.querySelectorAll('.gct-algo-radio').forEach((radio) => {
+  algoRadios.forEach((radio) => {
     radio.addEventListener('input', (evt) => {
       if (evt.target.checked) {
         ct.algorithm = evt.target.value;
-        setOrder(ct.order);
       }
     });
   });
@@ -83,12 +167,28 @@ const gct = (() => {
   });
 
   lengthSelect.addEventListener('change', () => {
-    ct.ctLength = lengthSelect.value;
+    ct.length = lengthSelect.value;
   });
 
-  orderSelect.addEventListener('change', () => setOrder(parseInt(orderSelect.value, 10)));
-
-  return ct;
+  return {
+    get ct() { return ct; },
+    setFrame: (frame) => {
+      if (!frame.lct) return;
+      ct = mixin({}, frame.lct);
+      ct.algorithm = frame.lct.algorithm;
+      ct.length = frame.lct.length;
+      lengthSelect.value = ct.length;
+      ct.dither = frame.lct.dither;
+      ditherCheck.checked = ct.dither;
+      for (let i = 0, n = algoRadios.length; i < n; i += 1) {
+        const radio = algoRadios.item(i);
+        if (radio.value === ct.algorithm) {
+          radio.checked = true;
+          break;
+        }
+      }
+    },
+  };
 })();
 
 const feedBack = (() => {
@@ -130,6 +230,87 @@ const feedBack = (() => {
   };
 
   return { info, error };
+})();
+
+const supportsFileReader = window.FileReader && window.Blob;
+
+const getMimeType = (file) => {
+  if (supportsFileReader) {
+    return new Promise((resolve) => {
+      // https://stackoverflow.com/a/29672957
+      const fileReader = new FileReader();
+      fileReader.onloadend = (e) => {
+        const arr = (new Uint8Array(e.target.result)).subarray(0, 4);
+        let header = '';
+        for (let i = 0; i < arr.length; i += 1) {
+          header += arr[i].toString(16);
+        }
+        let type = '';
+        switch (header) {
+          case '89504e47':
+            type = 'image/png';
+            break;
+          case '47494638':
+            type = 'image/gif';
+            break;
+          case 'ffd8ffe0':
+          case 'ffd8ffe1':
+          case 'ffd8ffe2':
+          case 'ffd8ffe3':
+          case 'ffd8ffe8':
+            type = 'image/jpeg';
+            break;
+          default:
+            type = 'unknown'; // Or you can use the blob.type as fallback
+            break;
+        }
+        resolve(type);
+      };
+      fileReader.readAsArrayBuffer(file);
+    });
+  }
+  return Promise.resolve(file.type);
+};
+
+const imageImporter = (() => {
+  const fileInput = document.querySelector('#import-image-file');
+  const supportedMimes = ['image/png', 'image/jpeg'];
+  const reset = () => {
+    fileInput.value = '';
+  };
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    getMimeType(file).then((mime) => {
+      if (supportedMimes.indexOf(mime) < 0) {
+        feedBack.error('Unsupported file type');
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        emitter.emit(events.GRAB_FRAME, img);
+        URL.revokeObjectURL(file);
+        reset();
+      };
+      img.src = URL.createObjectURL(file);
+    }).catch((err) => {
+      let msg = 'Unable to import file';
+      if (err instanceof Error) {
+        if (err.message) {
+          msg = err.message;
+        }
+      } else if (typeof err === 'string') {
+        msg = err;
+      }
+      feedBack.error(msg);
+      reset();
+    });
+  });
+
+  return {
+    click: () => fileInput.click(),
+  };
 })();
 
 // const sample = (() => {
@@ -193,16 +374,16 @@ const busy = (() => {
 // Setup Sidebar Open/Close
 (() => {
   const hamburger = document.querySelector('#hamburger');
-  const sidebar = document.querySelector('#sidebar');
+  const content = document.querySelector('#content');
   let open = true;
 
   hamburger.addEventListener('click', () => {
     if (open) {
       hamburger.classList.remove('open');
-      sidebar.classList.remove('open');
+      content.classList.remove('sidebar-open');
     } else {
       hamburger.classList.add('open');
-      sidebar.classList.add('open');
+      content.classList.add('sidebar-open');
     }
     open = !open;
   });
@@ -213,6 +394,7 @@ const busy = (() => {
   const tabHeaders = document.querySelectorAll('.tab-header');
   let activeTabHeader;
   let activeTabItem;
+  let simulationTabOpened = false;
 
   tabHeaders.forEach((header) => {
     header.addEventListener('click', () => {
@@ -228,9 +410,15 @@ const busy = (() => {
       }
 
       activeTabHeader = header;
-      activeTabItem = document.querySelector(header.getAttribute('data-tab'));
+      const id = header.getAttribute('data-tab');
+      activeTabItem = document.querySelector(id);
       activeTabItem.classList.add('active');
       header.classList.add('active');
+
+      if (!simulationTabOpened && id === '#simulation-wrap') {
+        simulationTabOpened = true;
+        emitter.emit(events.SIMULATION_TAB_FIRST_TIME_OPEN);
+      }
     });
 
     if (header.classList.contains('active')) {
@@ -239,20 +427,77 @@ const busy = (() => {
   });
 })();
 
-// Thumbnail Height
+const configuration = (() => {
+  const MAX_CANVAS_WIDTH = 320;
+  const MAX_CANVAS_HEIGHT = 200;
+  let canvasWidth = 320;
+  let canvasHeight = 200;
+  let delay = 10;
+  let width = 320;
+  let height = 200;
+
+  newSlider(
+    document.querySelector('#canvas-width-slider-group'),
+    'Width', 0, MAX_CANVAS_WIDTH, canvasWidth, 0, 50,
+  ).onValueChanged = (value) => {
+    width = value;
+  };
+
+  newSlider(
+    document.querySelector('#canvas-height-slider-group'),
+    'Height', 0, MAX_CANVAS_HEIGHT, canvasHeight, 0, 50,
+  ).onValueChanged = (value) => {
+    height = value;
+  };
+
+  const lockDimensions = () => {
+    canvasWidth = Math.round(width);
+    canvasHeight = Math.round(height);
+  };
+
+  document.querySelector('#lock-dimensions-btn').addEventListener('click', () => {
+    emitter.emit(events.LOCK_CANVAS_DIMENSIONS);
+  });
+
+  return {
+    get canvasWidth() { return canvasWidth; },
+    get canvasHeight() { return canvasHeight; },
+    get delay() { return delay; },
+    set delay(val) { delay = val; },
+    lockDimensions,
+    toPojo: () => ({ canvas: { width: canvasWidth, height: canvasHeight }, delay }),
+  };
+})();
+
+// Video Player
 (() => {
   const video = document.querySelector('#player');
   const startText = document.querySelector('#frame-start-text');
-  const durationText = document.querySelector('#duration-text');
-  const rateText = document.querySelector('#video-framerate-value');
   const MAX_DURATION = 5;
   let loaded = false;
   let start = 0;
   let duration = 1;
-  let fps = 12;
+  let fps = 12; // Frames per second
+
+  newSlider(
+    document.querySelector('#duration-slider-group'),
+    'Duration', 0, MAX_DURATION, 1, 1,
+  ).onValueChanged = (value) => {
+    duration = value;
+  };
+
+  newSlider(
+    document.querySelector('#frame-rate-slider-group'),
+    'Frame Rate', 1, 30, 12, 0,
+  ).onValueChanged = (value) => {
+    fps = Math.round(value);
+  };
 
   video.onerror = () => {
     loaded = false;
+  };
+  video.onloadstart = () => {
+    loaded = true;
   };
 
   document.querySelector('#load-video-btn').addEventListener('change', (evt) => {
@@ -271,30 +516,19 @@ const busy = (() => {
     startText.textContent = start.toFixed(2);
   });
 
-  document.querySelector('#duration-slider').addEventListener('input', (evt) => {
-    duration = parseFloat(((evt.target.value * MAX_DURATION) / evt.target.max).toFixed(1));
-    durationText.textContent = duration;
-  });
-
-  document.querySelector('#video-framerate-slider').addEventListener('input', (evt) => {
-    fps = Math.round(evt.target.value);
-    rateText.textContent = fps;
-  });
-
   document.querySelector('#clear-frames-btn').addEventListener('click', () => {
     emitter.emit(events.CLEAR_FRAMES);
   });
 
-  const grab = (time, endTime, step, callback) => setTimeout(() => {
-    if (time > endTime) {
+  const grab = (time, grabbedFrames, totalFrames, interval, callback) => setTimeout(() => {
+    if (grabbedFrames >= totalFrames) {
       callback();
-      busy.set(false);
       return;
     }
     video.currentTime = time;
-    emitter.emit(events.ADD_FRAME, video);
-    grab(time + step, endTime, step, callback);
-  }, 200);
+    emitter.emit(events.GRAB_FRAME, video);
+    grab(time + interval, grabbedFrames + 1, totalFrames, interval, callback);
+  }, 100);
 
   document.querySelector('#grab-btn').addEventListener('click', () => {
     if (!loaded) {
@@ -307,10 +541,12 @@ const busy = (() => {
     }
     busy.set(true);
     emitter.emit(events.CLEAR_FRAMES);
+    emitter.emit(events.LOCK_CANVAS_DIMENSIONS);
     const tempTime = video.currentTime;
-    video.currentTime = start;
-    grab(start, start + duration, 1 / fps, () => {
+    const total = Math.floor(fps * duration);
+    grab(start, 0, total, 1 / fps, () => {
       video.currentTime = tempTime;
+      busy.set(false);
     });
   });
 })();
@@ -319,11 +555,168 @@ const thumbnail = (() => {
   let draggedImage;
   let dropped = false;
   let hasImages = false;
-  let selectedImage = null;
+  let gctFrame = null;
+  let selectedFrame = null;
+  let selections = [];
+  let width = configuration.canvasWidth;
+  let height = configuration.canvasHeight;
 
   let frames = [];
 
   let nextInsertId = 1;
+
+  const indexOf = (element, children) => {
+    for (let i = 0, n = children.length; i < n; i += 1) {
+      const child = children[i];
+      if (child === element) return i;
+    }
+    return -1;
+  };
+
+  const clearSelections = () => {
+    selections.forEach((frame) => frame.image.classList.remove('selected'));
+    selections = [];
+  };
+
+  const selectFrame = (frame) => {
+    clearSelections();
+    selectedFrame = frame;
+    selectedFrame.image.classList.add('selected');
+    selections.push(frame);
+    emitter.emit(events.FRAME_SELECTED, frame);
+  };
+
+  const contextMenu = (() => {
+    const menu = document.createElement('div');
+    menu.classList.add('thumnail-context-menu');
+
+    const deleteBtn = document.createElement('a');
+    deleteBtn.classList.add('menu-item');
+    deleteBtn.textContent = 'Delete';
+    menu.append(deleteBtn);
+
+    const isGCTBtn = document.createElement('a');
+    isGCTBtn.classList.add('menu-item');
+    isGCTBtn.textContent = 'Set As GCT Image';
+    menu.append(isGCTBtn);
+
+    const previewBtn = document.createElement('a');
+    previewBtn.classList.add('menu-item');
+    previewBtn.textContent = 'Preview';
+    menu.append(previewBtn);
+
+    const convertBtn = document.createElement('a');
+    convertBtn.classList.add('menu-item');
+    convertBtn.textContent = 'Convert';
+    menu.append(convertBtn);
+
+    const importImageBtn = document.createElement('a');
+    importImageBtn.classList.add('menu-item');
+    importImageBtn.textContent = 'Import Image';
+    menu.append(importImageBtn);
+
+    let attached = false;
+
+    const defaultHandler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const close = () => {
+      document.removeEventListener('mousedown', close);
+      menu.remove();
+      attached = false;
+      deleteBtn.onclick = defaultHandler;
+      isGCTBtn.onclick = defaultHandler;
+      previewBtn.onclick = defaultHandler;
+      convertBtn.onclick = defaultHandler;
+      importImageBtn.onclick = defaultHandler;
+    };
+
+    // deleteBtn.onclick = () => {
+    //   document.addEventListener('mousedown', close);
+    // };
+
+    menu.oncontextmenu = (e) => e.preventDefault();
+    // menu.onclick = (e) => e.stopPropagation();
+    // eslint-disable-next-line no-script-url
+    deleteBtn.href = 'javascript:void()';
+
+    const show = (frame, x, y) => {
+      close();
+      menu.style.visibility = 'hidden';
+      if (frame !== null) {
+        deleteBtn.classList.remove('disabled');
+        deleteBtn.onclick = (e) => {
+          e.preventDefault();
+          selections.forEach((frame) => frame.remove());
+        };
+        if (selections.length > 1) {
+          isGCTBtn.classList.add('disabled');
+          previewBtn.classList.add('disabled');
+          convertBtn.classList.add('disabled');
+        } else {
+          if (frame.lct) {
+            isGCTBtn.onclick = (e) => {
+              e.preventDefault();
+              frame.setAsGCT();
+            };
+            isGCTBtn.classList.remove('disabled');
+          } else {
+            isGCTBtn.classList.add('disabled');
+          }
+          previewBtn.onclick = (e) => {
+            if (selections.length > 1) return;
+            e.preventDefault();
+            frame.preview();
+          };
+          convertBtn.onclick = (e) => {
+            if (selections.length > 1) return;
+            e.preventDefault();
+            frame.convert();
+          };
+
+          previewBtn.classList.remove('disabled');
+          convertBtn.classList.remove('disabled');
+        }
+      } else {
+        deleteBtn.classList.add('disabled');
+        isGCTBtn.classList.add('disabled');
+        previewBtn.classList.add('disabled');
+        convertBtn.classList.add('disabled');
+      }
+      importImageBtn.onclick = () => imageImporter.click();
+      document.addEventListener('click', close);
+
+      if (!attached) {
+        document.body.append(menu);
+        attached = true;
+      }
+      setTimeout(() => {
+        const right = document.body.clientWidth - x;
+        const bottom = document.body.clientHeight - y;
+        if (right < menu.clientWidth) {
+          menu.style.removeProperty('left');
+          menu.style.right = `${right}px`;
+        } else {
+          menu.style.removeProperty('right');
+          menu.style.left = `${x}px`;
+        }
+        if (bottom < menu.clientHeight) {
+          menu.style.removeProperty('top');
+          menu.style.bottom = `${bottom}px`;
+        } else {
+          menu.style.removeProperty('bottom');
+          menu.style.top = `${y}px`;
+        }
+        menu.style.visibility = 'visible';
+      }, 10);
+    };
+
+    return {
+      show,
+    };
+  })();
 
   const eventPosition = (elemt, evt) => {
     const rect = elemt.getBoundingClientRect();
@@ -332,9 +725,13 @@ const thumbnail = (() => {
       y: evt.clientY - rect.top,
     };
   };
+
+  let containerBG;
+
   const container = (() => {
+    containerBG = document.querySelector('#thumbnails-bg');
     const con = document.querySelector('#thumbnails-container');
-    con.style.maxHeight = `${con.clientHeight}px`;
+    containerBG.style.maxHeight = `${containerBG.clientHeight}px`;
     return con;
   })();
 
@@ -346,6 +743,15 @@ const thumbnail = (() => {
       x: rect2.x - rect1.x + (elemt.width / 2),
       y: rect2.y - rect1.y + (elemt.height / 2),
     };
+  };
+
+  const findFrame = (id) => {
+    for (let i = 0, n = frames.length; i < n; i += 1) {
+      if (frames[i].id === id) {
+        return frames[i];
+      }
+    }
+    return null;
   };
 
   container.addEventListener('dragover', (evt) => {
@@ -399,10 +805,20 @@ const thumbnail = (() => {
     dropped = true;
   });
 
+  container.oncontextmenu = (e) => {
+    e.preventDefault();
+    contextMenu.show(null, e.clientX, e.clientY);
+  };
+
+  containerBG.oncontextmenu = (e) => {
+    e.preventDefault();
+    contextMenu.show(null, e.clientX, e.clientY);
+  };
+
   const createCanvas = (video) => {
     const canvas = document.createElement('canvas');
-    canvas.width = thumbnailDimensions.width;
-    canvas.height = thumbnailDimensions.height;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -411,18 +827,39 @@ const thumbnail = (() => {
     element.height = canvas.height;
     element.classList.add('thumbnail');
     element.src = canvas.toDataURL('image/png');
-    element.setAttribute('data-index', nextInsertId);
+    element.setAttribute('data-id', nextInsertId);
 
     container.append(element);
 
     const frame = {
       image: element,
+      canvas,
       lct: null,
       id: nextInsertId,
+      selected: false,
+      isGCTImage: false,
       remove: () => {
+        frames = frames.filter((f) => f !== frame);
         element.remove();
-        frames = frames.filter((f) => frame.id !== f.id);
+        if (frame.selected) {
+          selections = selections.filter((f) => f !== frame);
+        }
+        if (selectedFrame === frame) {
+          selectedFrame = null;
+          emitter.emit(events.FRAME_SELECTION_CLEARED);
+        }
       },
+      setAsGCT: () => {
+        if (frame.isGCTImage) return;
+        if (gctFrame) gctFrame.isGCTImage = false;
+        gctFrame = frame;
+        frame.isGCTImage = true;
+        gct.setFrame(frame);
+        frame.lct = null;
+        emitter.emit(events.GCT_FRAME_CHANGE);
+      },
+      preview: () => {},
+      convert: () => {},
     };
 
     nextInsertId += 1;
@@ -445,36 +882,78 @@ const thumbnail = (() => {
       }
     };
 
-    element.addEventListener('mousedown', () => {
-      if (element === selectedImage) {
+    element.addEventListener('click', (e) => {
+      if (e.shiftKey) {
+        if (selectedFrame !== null) {
+          const { children } = container;
+          let start = indexOf(selectedFrame.image, children);
+          let end = indexOf(element, children);
+          if (start > end) {
+            const temp = start;
+            start = end;
+            end = temp;
+          }
+          clearSelections();
+          for (let i = start; i <= end; i += 1) {
+            const child = children.item(i);
+            const id = parseInt(child.getAttribute('data-id'), 10);
+            const f = findFrame(id);
+            if (f) {
+              f.image.classList.add('selected');
+              selections.push(f);
+            }
+          }
+          return;
+        }
+      } else if (e.ctrlKey) {
+        if (indexOf(frame, selections) < 0) {
+          selections.push(frame);
+          element.classList.add('selected');
+        } else {
+          selections = selections.filter((f) => f !== frame);
+          element.classList.remove('selected');
+          if (frame === selectedFrame) {
+            selectedFrame = null;
+            emitter.emit(events.FRAME_SELECTION_CLEARED);
+          }
+        }
         return;
       }
-      if (selectedImage) {
-        selectedImage.classList.remove('selected');
-      }
-      selectedImage = element;
-      selectedImage.classList.add('selected');
-      emitter.emit(events.FRAME_SELECTED, frame);
+      selectFrame(frame);
     });
+
+    element.oncontextmenu = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (indexOf(frame, selections) < 0) {
+        selectFrame(frame);
+      }
+      contextMenu.show(frame, e.clientX, e.clientY);
+    };
 
     return frame;
   };
 
-  const findFrame = (id) => {
-    for (let i = 0, n = frames.length; i < n; i += 1) {
-      if (frames[i].id === id) {
-        return frames[i];
-      }
+  emitter.subscribe(events.LOCK_CANVAS_DIMENSIONS, () => {
+    if (frames.length > 0) {
+      feedBack.error(`You have frames that are locked at (${width} X ${height}).\nPlease clear your current frames to lock to a new dimension.`);
+      return;
     }
-    return null;
-  };
+    configuration.lockDimensions();
+    width = configuration.canvasWidth;
+    height = configuration.canvasHeight;
+  });
 
   emitter.subscribe(events.CLEAR_FRAMES, () => {
     container.innerHTML = '';
+    frames = [];
+    selections = [];
+    selectedFrame = null;
+    emitter.emit(events.FRAME_SELECTION_CLEARED);
     hasImages = false;
   });
 
-  emitter.subscribe(events.ADD_FRAME, (video) => {
+  emitter.subscribe(events.GRAB_FRAME, (video) => {
     createCanvas(video);
     hasImages = true;
   });
@@ -496,7 +975,7 @@ const thumbnail = (() => {
       });
       return frames;
     },
-    hasImages,
+    hasImages: () => hasImages,
   };
 })();
 
@@ -505,19 +984,25 @@ const thumbnail = (() => {
   const canvas = document.querySelector('#simulation-canvas');
   const ctx = canvas.getContext('2d');
   const simulateBtn = document.querySelector('#simulation-btn');
-  const delayText = document.querySelector('#simulation-interval-value');
 
   let reverse = true;
   let stopped = true;
   let delay = 100;
 
-  document.querySelector('#simulation-reverse-check').addEventListener('input', (evt) => {
-    reverse = evt.target.checked;
+  const delaySlider = newSlider(
+    document.querySelector('#delay-slider-group'),
+    'Delay', 1, 100, configuration.delay, 0,
+  );
+  delaySlider.onValueChanged = (value) => {
+    delay = 10 * value;
+    configuration.delay = Math.round(value);
+  };
+  emitter.subscribe(events.SIMULATION_TAB_FIRST_TIME_OPEN, () => {
+    delaySlider.reinit();
   });
 
-  document.querySelector('#simulation-interval-slider').addEventListener('input', (evt) => {
-    delay = 10 * parseInt(evt.target.value, 10);
-    delayText.textContent = delay;
+  document.querySelector('#simulation-reverse-check').addEventListener('input', (evt) => {
+    reverse = evt.target.checked;
   });
 
   const loop = (() => {
@@ -561,7 +1046,7 @@ const thumbnail = (() => {
   })();
 
   simulateBtn.addEventListener('click', () => {
-    if (!thumbnail.hasImages) {
+    if (!thumbnail.hasImages()) {
       feedBack.error('No frames found');
       return;
     }
@@ -584,8 +1069,8 @@ const thumbnail = (() => {
   const canvas = document.querySelector('#frame-view-canvas');
   const ctx = canvas.getContext('2d');
   const useGCTCheck = document.querySelector('#use-gct-check');
-  const orderSelect = document.querySelector('#lct-order-select');
   const lengthSelect = document.querySelector('#lct-length-select');
+  lengthSelect.innerHTML = lengthOptions;
   const ditherCheck = document.querySelector('#local-dither-check');
   const deleteBtn = document.querySelector('#delete-frame-btn');
   const histogramRadio = document.querySelector('#local-histogram');
@@ -594,51 +1079,16 @@ const thumbnail = (() => {
   const kCutRadio = document.querySelector('#local-k-cut');
   const algoRadios = [histogramRadio, medianCutRadio, modifiedHistogramRadio, kCutRadio];
 
+  const isGCTDisplay = document.querySelector('#gct-image-display');
+
   const allControls = [
     histogramRadio,
     medianCutRadio,
     modifiedHistogramRadio,
-    orderSelect,
     lengthSelect,
     ditherCheck,
     deleteBtn,
   ];
-
-  const setOrder = (order) => {
-    if (!frame.lct) {
-      return;
-    }
-    frame.lct.order = order;
-
-    let max = 256;
-    if (frame.lct.algorithm === algorithms.HISTOGRAM) {
-      max = order * order * order;
-    } else if (frame.lct.algorithm === algorithms.MEDIAN_CUT) {
-      max = 2 ** order;
-    }
-    if (max > 256) {
-      max = 256;
-    }
-
-    let options = '<option>2</option>';
-    let i = 2;
-    let val = 2;
-    while (i <= 8) {
-      const temp = 2 ** i;
-      if (temp > max) {
-        break;
-      }
-      val = temp;
-      options += `<option>${temp}</option>`;
-      i += 1;
-    }
-    lengthSelect.innerHTML = options;
-
-    if (frame.lct.ctLength > val) {
-      frame.lct.ctLength = val;
-    }
-    lengthSelect.value = frame.lct.ctLength;
-  };
 
   const setAlgorithm = (algorithm) => {
     for (let i = 0; i < algoRadios.length; i += 1) {
@@ -663,17 +1113,22 @@ const thumbnail = (() => {
   };
 
   const setCT = () => {
-    lengthSelect.value = frame.lct.ctLength;
+    lengthSelect.value = frame.lct.length;
     ditherCheck.checked = frame.lct.dither;
     setDisabled(false);
     setAlgorithm(frame.lct.algorithm);
-    setOrder(frame.lct.order);
+  };
+
+  const clearCanvas = () => {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
   const clear = () => {
     setDisabled(true);
     useGCTCheck.setAttribute('disabled', true);
     frame = null;
+    isGCTDisplay.classList.remove('is-gct');
   };
 
   algoRadios.forEach((radio) => {
@@ -681,7 +1136,6 @@ const thumbnail = (() => {
       if (evt.target.checked) {
         if (frame.lct) {
           frame.lct.algorithm = evt.target.value;
-          setOrder(frame.lct.order);
         }
       }
     });
@@ -689,11 +1143,9 @@ const thumbnail = (() => {
 
   lengthSelect.addEventListener('change', () => {
     if (frame.lct) {
-      frame.lct.ctLength = parseInt(lengthSelect.value, 10);
+      frame.lct.length = parseInt(lengthSelect.value, 10);
     }
   });
-
-  orderSelect.addEventListener('change', () => setOrder(parseInt(orderSelect.value, 10)));
 
   ditherCheck.addEventListener('change', () => {
     if (frame && frame.lct) {
@@ -717,22 +1169,51 @@ const thumbnail = (() => {
 
   emitter.subscribe(events.FRAME_SELECTED, (payload) => {
     frame = payload;
+    clearCanvas();
     ctx.drawImage(frame.image, 0, 0, canvas.width, canvas.height);
-    useGCTCheck.removeAttribute('disbled');
-    if (frame.lct) {
-      setCT();
-      useGCTCheck.checked = false;
-    } else {
+    if (frame.isGCTImage) {
       setDisabled(true);
-      useGCTCheck.checked = true;
+      useGCTCheck.setAttribute('disabled', true);
+      isGCTDisplay.classList.add('is-gct');
+    } else {
+      isGCTDisplay.classList.remove('is-gct');
+      useGCTCheck.removeAttribute('disabled');
+      if (frame.lct) {
+        setCT();
+        useGCTCheck.checked = false;
+      } else {
+        setDisabled(true);
+        useGCTCheck.checked = true;
+      }
     }
   });
 
-  emitter.subscribe(events.CLEAR_FRAMES, () => {
+  emitter.subscribe(events.GCT_FRAME_CHANGE, () => {
+    setDisabled(true);
+    useGCTCheck.setAttribute('disabled', true);
+    isGCTDisplay.classList.add('is-gct');
+  });
+
+  emitter.subscribe(events.FRAME_SELECTION_CLEARED, () => {
+    clearCanvas();
     clear();
   });
 
   clear();
 })();
+
+document.querySelector('#process-btn').onclick = () => {
+  const frames = thumbnail.frames();
+  const config = configuration.toPojo();
+  let gctConfig = gct.ct;
+  gctConfig = mixin({}, gctConfig);
+  frames.forEach((frame, i) => {
+    if (frame.isGCTImage) {
+      gctConfig.index = i;
+    }
+  });
+  config.gct = gctConfig;
+  console.log(config);
+};
 
 test.run();

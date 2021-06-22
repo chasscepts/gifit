@@ -1,3 +1,4 @@
 node_modules
 src/runner.mjs
 src/testScript.js
+src/assets/images/video.mp4
